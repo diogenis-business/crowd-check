@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Pulse Live",
+  "description": "A minimalist, glass-smooth app to visualize real-time and historical venue busyness with a sleek dark mode aesthetic.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
