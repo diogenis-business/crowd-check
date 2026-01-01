@@ -3,28 +3,47 @@ import { Location, PopularityData } from '../types';
 import { MOCK_PATTERNS } from '../constants';
 
 /**
- * Uses Photon API (powered by OpenStreetMap data) for 100% free location searching.
- * Photon is faster and more permissive than Nominatim for client-side 'as-you-type' search.
+ * Helper to calculate distance between two coordinates in miles
  */
-export const searchLocations = async (query: string): Promise<Location[]> => {
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 3958.8; // Radius of the earth in miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2); 
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  return R * c;
+};
+
+/**
+ * Uses Photon API (powered by OpenStreetMap data) for 100% free location searching.
+ * Biases results based on user coordinates if provided.
+ */
+export const searchLocations = async (query: string, userLat?: number, userLng?: number): Promise<Location[]> => {
   if (!query || query.length < 2) return [];
   
   try {
-    // Photon is an open-source geocoding API that is very friendly for client-side fetch.
-    const response = await fetch(
-      `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5`
-    );
+    // Increase limit to 30 to ensure we find local matches even if they aren't the top global match
+    let url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=30`;
+    
+    // Bias results towards the user's location if available
+    if (userLat !== undefined && userLng !== undefined) {
+      url += `&lat=${userLat}&lon=${userLng}`;
+    }
 
+    const response = await fetch(url);
     if (!response.ok) throw new Error('Network response was not ok');
     
     const data = await response.json();
 
-    // Photon returns GeoJSON. We map 'features' to our internal 'Location' type.
     return (data.features || []).map((feature: any) => {
       const p = feature.properties;
       const coords = feature.geometry.coordinates;
+      const lat = coords[1];
+      const lng = coords[0];
       
-      // Construct a clean display address from available components
       const addressParts = [
         p.street,
         p.house_number,
@@ -32,20 +51,29 @@ export const searchLocations = async (query: string): Promise<Location[]> => {
         p.state,
         p.country
       ].filter(Boolean);
-      
-      return {
+
+      const location: Location = {
         id: `${p.osm_type || 'osm'}-${p.osm_id || Math.random()}`,
         name: p.name || addressParts[0] || 'Unknown Place',
-        // 'osm_value' often contains the category like 'cafe', 'restaurant', 'gym'
         category: p.osm_value || p.osm_key || 'Place',
         address: addressParts.join(', ') || 'No address details available',
-        lat: coords[1],
-        lng: coords[0],
+        lat,
+        lng,
       };
-    });
+
+      if (userLat !== undefined && userLng !== undefined) {
+        location.distance = calculateDistance(userLat, userLng, lat, lng);
+      }
+      
+      return location;
+    }).sort((a: Location, b: Location) => {
+      // Prioritize nearby results strictly if user coordinates are available
+      const distA = a.distance ?? Infinity;
+      const distB = b.distance ?? Infinity;
+      return distA - distB;
+    }).slice(0, 10); // Still only show top 10 relevant (closest) results
   } catch (error) {
     console.error('Search error:', error);
-    // Return an empty array so the UI can handle the failure gracefully
     return [];
   }
 };
@@ -65,7 +93,6 @@ export const getBusynessData = (category: string): PopularityData[] => {
     const historical = pattern[hour] / 100;
     let live = undefined;
     if (hour === currentHour) {
-      // Simulate live busyness with a slight random variance from historical
       live = Math.max(0, Math.min(1, historical + (Math.random() - 0.5) * 0.15));
     }
     return { hour, historical, live };

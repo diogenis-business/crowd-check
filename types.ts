@@ -6,6 +6,7 @@ export interface Location {
   address: string;
   lat: number;
   lng: number;
+  distance?: number; // Distance in kilometers
 }
 
 export interface PopularityData {

@@ -6,28 +6,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pulse Live</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              border: "var(--border)",
+              input: "var(--input)",
+              ring: "var(--ring)",
+              background: "var(--background)",
+              foreground: "var(--foreground)",
+            },
+          },
+        },
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;500;600;700;900&display=swap" rel="stylesheet">
     <style>
+      :root {
+        --background: #ffffff;
+        --foreground: #000000;
+        --card-bg: #ffffff;
+        --border: rgba(0, 0, 0, 0.08);
+        --input-bg: #f8fafc;
+        --chart-historical: #e2e8f0;
+        --chart-hover: #cbd5e1;
+        --chart-current: #94a3b8;
+      }
+
+      :root.dark {
+        --background: #000000;
+        --foreground: #ffffff;
+        --card-bg: #111111;
+        --border: rgba(255, 255, 255, 0.15);
+        --input-bg: #0f0f0f;
+        --chart-historical: #262626;
+        --chart-hover: #333333;
+        --chart-current: #525252;
+      }
+
       body {
         font-family: 'Inter', sans-serif;
         margin: 0;
-        background-color: #ffffff;
-        color: #000000;
+        background-color: var(--background);
+        color: var(--foreground);
+        transition: background-color 0.3s ease, color 0.3s ease;
       }
       
       .glass-card {
-        background: #ffffff;
-        border: 1px solid rgba(0, 0, 0, 0.08);
+        background: var(--card-bg);
+        border: 1px solid var(--border);
         box-shadow: 0 10px 30px -5px rgba(0,0,0,0.05);
-        transition: all 0.2s ease;
+        transition: transform 0.2s ease, background-color 0.3s ease, border-color 0.3s ease;
       }
 
       .pulse-dot {
         width: 8px;
         height: 8px;
-        background-color: #000000;
+        background-color: var(--foreground);
         border-radius: 50%;
         position: relative;
       }
@@ -48,29 +87,35 @@
       }
 
       .chart-bar {
-        transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.4s ease;
       }
       
+      .chart-bar:hover {
+        transform: scaleY(1.05);
+        transition: transform 0.2s ease, height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
       ::-webkit-scrollbar { width: 0; background: transparent; }
+
+      input, button, div, span, nav, main {
+        transition: box-shadow 0.5s ease;
+      }
     </style>
-    <script type="importmap">
+  <script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@^19.2.3",
-    "react-dom": "https://esm.sh/react-dom@^19.2.3",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
     "vite": "https://esm.sh/vite@^7.3.0",
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>
-  </head>
+</head>
   <body>
     <div id="root"></div>
-    <!-- Crucial: entry point script -->
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>
